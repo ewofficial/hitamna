@@ -1,0 +1,1321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>KYZEN — Whitelist Portal</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=500;700;800&display=swap');
+
+        :root {
+            --bg-color: #FDCE2B;
+            --black: #000000;
+            --white: #ffffff;
+            --card-bg: rgba(255, 255, 255, 0.7);
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--black);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        #loadingOverlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg-color);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.4s ease;
+        }
+
+        .spinner {
+            width: 45px; height: 45px;
+            border: 4px solid var(--black);
+            border-top: 4px solid var(--white);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(253, 206, 43, 0.9);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1.5px solid var(--black);
+            z-index: 1000;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            flex: 1;
+        }
+
+        .page-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            width: 100%;
+        }
+
+        .page-section.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .nft-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1.5px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            transition: var(--transition);
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            width: 100%;
+        }
+
+        .nft-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: 6px 6px 0px var(--black);
+        }
+
+        .btn-action {
+            background: var(--black);
+            color: var(--white);
+            border: 1.5px solid var(--black);
+            width: 100%;
+            padding: 14px;
+            font-size: 15px;
+            font-weight: 700;
+            text-transform: uppercase;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 2px 2px 0px rgba(255,255,255,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-action:hover {
+            background: var(--white);
+            color: var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+        }
+
+        .btn-action:disabled {
+            background: #b5b5b5;
+            border-color: #888888;
+            color: #666666;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .btn-task {
+            background: var(--white);
+            color: var(--black);
+            border: 1.5px solid var(--black);
+            padding: 12px;
+            font-weight: 700;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: left;
+            width: 100%;
+            transition: var(--transition);
+            margin-bottom: 10px;
+            box-shadow: 2px 2px 0px var(--black);
+            word-wrap: break-word;
+            white-space: normal;
+        }
+
+        .btn-task.completed {
+            background: #2ecc71 !important;
+            color: var(--white) !important;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 700;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px;
+            border: 1.5px solid var(--black);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            background: var(--white);
+            outline: none;
+            max-width: 100%;
+        }
+
+        .form-input:focus {
+            box-shadow: 2px 2px 0px var(--black);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .timer-container {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            width: 100%;
+        }
+
+        .timer-unit {
+            background: var(--black);
+            color: var(--white);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            flex: 1;
+            min-width: 0;
+        }
+
+        .timer-num {
+            font-size: 22px;
+            font-weight: 800;
+            display: block;
+        }
+
+        .timer-label {
+            font-size: 10px;
+            color: #bbb;
+            text-transform: uppercase;
+        }
+
+        .data-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            margin-top: 10px;
+            border: 1.5px solid var(--black);
+            border-radius: 6px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .data-table td, .data-table th {
+            border: 1.5px solid var(--black);
+            padding: 10px;
+            font-weight: 700;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        .data-table th {
+            background: var(--black);
+            color: var(--white);
+            text-align: left;
+        }
+
+        .profile-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1.5px solid var(--black);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .profile-img {
+            width: 80px;
+            height: 80px;
+            border: 1.5px solid var(--black);
+            border-radius: 8px;
+            object-fit: cover;
+            background: var(--white);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            font-weight: 800;
+            font-size: 11px;
+            border: 1.5px solid var(--black);
+            border-radius: 4px;
+            margin-top: 5px;
+            text-transform: uppercase;
+        }
+
+        .gallery-wrap {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+            width: 100%;
+        }
+
+        .gallery-item {
+            border: 1.5px solid var(--black);
+            border-radius: 8px;
+            background: var(--white);
+            overflow: hidden;
+            cursor: pointer;
+            box-shadow: 2px 2px 0px var(--black);
+            transition: var(--transition);
+            width: 100%;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 4px 4px 0px var(--black);
+        }
+
+        .gallery-item img {
+            width: 100%;
+            display: block;
+            border-bottom: 1.5px solid var(--black);
+        }
+
+        .gallery-title {
+            padding: 8px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(4px);
+            z-index: 2000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border: 2px solid var(--black);
+            border-radius: 12px;
+            box-shadow: 6px 6px 0px var(--black);
+            max-width: 500px;
+            width: 100%;
+            padding: 20px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 10px; right: 15px;
+            font-size: 24px;
+            font-weight: 800;
+            cursor: pointer;
+        }
+
+        .trait-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .trait-box {
+            background: #f8f9fa;
+            border: 1.5px solid var(--black);
+            padding: 8px;
+            border-radius: 6px;
+        }
+
+        .trait-lbl { font-size: 10px; color: #666; font-weight: 700; text-transform: uppercase; }
+        .trait-val { font-size: 13px; font-weight: 700; margin-top: 2px; }
+
+        .slider-flex {
+            display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px;
+            width: 100%; -webkit-overflow-scrolling: touch;
+        }
+        
+        .download-asset-card {
+            flex-shrink: 0;
+            width: 100px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .slider-thumb {
+            width: 100px; height: 100px; border: 1.5px solid var(--black);
+            border-radius: 6px; object-fit: cover;
+        }
+        
+        .btn-download-asset {
+            background: var(--black);
+            color: var(--white);
+            border: 1.5px solid var(--black);
+            font-size: 10px;
+            font-weight: 800;
+            padding: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .captcha-box {
+            background: var(--black);
+            color: var(--white);
+            font-weight: 800;
+            font-size: 20px;
+            padding: 8px 16px;
+            border-radius: 6px;
+            letter-spacing: 4px;
+            user-select: none;
+        }
+
+        .error-alert {
+            background: #ff4d4d;
+            color: var(--white);
+            padding: 10px;
+            border-radius: 6px;
+            border: 1.5px solid var(--black);
+            margin-bottom: 12px;
+            font-weight: 700;
+            font-size: 13px;
+            display: none;
+        }
+
+        .pending-container {
+            background: #fff3cd;
+            border: 1.5px dashed #ffc107;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 700;
+            color: #856404;
+        }
+
+        footer {
+            border-top: 1.5px solid var(--black);
+            padding: 20px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 12px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 40px;
+            width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            nav { padding: 12px 15px; }
+            .logo { font-size: 20px; }
+            .container { padding: 15px; }
+            .grid-2, .grid-3 { grid-template-columns: 1fr; gap: 15px; }
+            .gallery-wrap { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+            .trait-grid { grid-template-columns: 1fr; }
+            h1 { font-size: 28px !important; line-height: 1.2 !important; }
+            .profile-bar { flex-direction: column; text-align: center; }
+            .timer-num { font-size: 18px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <nav>
+        <div class="logo">KYZEN</div>
+    </nav>
+
+    <div class="container">
+
+        <!-- ================================================== -->
+        <!-- VIRTUAL PAGE 1: WELCOME SCREEN                     -->
+        <!-- ================================================== -->
+        <div id="welcomePage" class="page-section">
+            <div id="wlClosingCountdownCardTop" class="nft-card" style="background: #ff4d4d; color: #fff; display:none;">
+                <h3 style="text-transform: uppercase; font-size: 14px; text-align:center;">Whitelist Registration Closing In:</h3>
+                <div class="timer-container" style="max-width: 400px; margin: 10px auto 0 auto;">
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlDays">00</span><span class="timer-label" style="color:#666;">Days</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlHours">00</span><span class="timer-label" style="color:#666;">Hours</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlMins">00</span><span class="timer-label" style="color:#666;">Mins</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlSecs">00</span><span class="timer-label" style="color:#666;">Secs</span></div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="nft-card">
+                    <h1 style="font-size: 36px; font-weight: 800; margin-bottom: 12px; line-height: 1.15;">Welcome to KYZEN Project</h1>
+                    <p style="font-size: 14px; line-height: 1.5; margin-bottom: 15px;">KYZEN is a premium digital collection on the Ethereum blockchain with a limited supply of exactly 1,434 NFTs.</p>
+                </div>
+
+                <div class="nft-card" style="display: flex; justify-content: center; align-items: center; background: rgba(255,255,255,0.3);">
+                    <img src="https://i.ibb.co.com/6cqCCxRh/1.png" alt="Featured NFT" style="width: 75%; max-width: 280px; border: 1.5px solid var(--black); border-radius: 10px; box-shadow: 4px 4px 0px var(--black);">
+                </div>
+            </div>
+
+            <div class="nft-card">
+                <h2 style="margin-bottom: 12px; font-size: 20px;">Whitelist Spots Matrix</h2>
+                <div class="grid-3">
+                    <div style="background: #fff; border: 1.5px solid var(--black); padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #10ac84;">GTD Phase (50%)</h4>
+                        <p style="font-size: 12px; margin-top: 4px; color: #444;">Guaranteed mint spot for active top supporters.</p>
+                    </div>
+                    <div style="background: #fff; border: 1.5px solid var(--black); padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #ff9f43;">FCFS Phase (30%)</h4>
+                        <p style="font-size: 12px; margin-top: 4px; color: #444;">First-come, first-served whitelist access.</p>
+                    </div>
+                    <div style="background: #fff; border: 1.5px solid var(--black); padding: 15px; border-radius: 8px;">
+                        <h4 style="color: #00d2d3;">Public Phase (20%)</h4>
+                        <p style="font-size: 12px; margin-top: 4px; color: #444;">Open distribution remaining for everyone.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nft-card">
+                <h2 style="margin-bottom: 10px; font-size: 20px;">Mint Schedule Timeline</h2>
+                <div class="data-table-wrapper">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Phase</th>
+                                <th>Time (UTC)</th>
+                                <th>Price</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>GTD FREE MINT</td><td>14:00 UTC</td><td>FREE</td></tr>
+                            <tr><td>FCFS Mint Window</td><td>14:30 UTC</td><td>0.0025 ETH</td></tr>
+                            <tr><td>Public Open Mint</td><td>15:00 UTC</td><td>0.0025 ETH</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p style="font-size: 12px; margin-top: 10px; font-weight: 700; color: #555;">*Note: Registered wallet addresses will be stored for future $KYZEN token airdrop eligibility.</p>
+            </div>
+
+            <div class="nft-card">
+                <h2 style="margin-bottom: 15px; font-size: 20px;">Project Roadmap</h2>
+                <div class="grid-2">
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 1: Community Growth</h4>
+                        <p style="font-size: 12px; margin: 0;">Launch whitelist registration, open Discord private access, and start campaign.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 2: Mint Launch</h4>
+                        <p style="font-size: 12px; margin: 0;">Activate official mint contract, list on secondary market, and verify asset holders.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 3: Utility Staking</h4>
+                        <p style="font-size: 12px; margin: 0;">Deploy $KYZEN token staking system, holder multiplier rewards, and Polymarket Copy Trade Bot access.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 4: Ecosystem Scale</h4>
+                        <p style="font-size: 12px; margin: 0;">Partner integration, new dynamic utility upgrades, and future legal token governance expansions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BUTTON MOVED TO THE BOTTOM ACCORDING TO INSTRUCTIONS -->
+            <div style="margin: 30px 0 10px 0;">
+                <button class="btn-action" onclick="goToAuthPage()">I Agree & Continue &rarr;</button>
+            </div>
+        </div>
+
+        <!-- ================================================== -->
+        <!-- VIRTUAL PAGE 2: TASK & LOGIN FORM APPLICATION      -->
+        <!-- ================================================== -->
+        <div id="authPage" class="page-section">
+            <div class="grid-2">
+                <div class="nft-card" style="height: fit-content;">
+                    <h2 style="font-size: 22px; margin-bottom: 10px;">Apply for Whitelist</h2>
+                    <p style="font-size: 12px; margin-bottom: 15px; color: #444;">Please fill up your correct information below to open your custom user profile dashboard.</p>
+                    
+                    <div class="error-alert" id="authErrorDisplay"></div>
+
+                    <div class="form-group">
+                        <label>Twitter Username</label>
+                        <input type="text" id="txTwitter" class="form-input" placeholder="@yourusername">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ethereum Wallet Address</label>
+                        <input type="text" id="txWallet" class="form-input" placeholder="0x...">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select Your Project Role</label>
+                        <select id="slRole" class="form-input">
+                            <option value="Community Supporter">Community Supporter</option>
+                            <option value="Collab">Collab Partner</option>
+                            <option value="Developer">Core System Developer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Security Code Verification</label>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <div class="captcha-box" id="captchaValueBox">0000</div>
+                            <input type="text" id="txCaptcha" class="form-input" placeholder="Type identical code">
+                        </div>
+                    </div>
+
+                    <button class="btn-action" onclick="processIdentityVerification()">Verify Information &rarr;</button>
+                </div>
+
+                <!-- TASKS WILL ONLY APPEAR AFTER SUBMITTING COMPLETED INFO -->
+                <div class="nft-card" id="taskPanelSection" style="display: none;">
+                    <h2 style="font-size: 22px; margin-bottom: 10px;">Complete Required Tasks</h2>
+                    <p style="font-size: 12px; margin-bottom: 15px; color: #444;">Click each button to complete the Twitter tasks. Buttons will automatically turn green when clicked.</p>
+                    
+                    <div>
+                        <button class="btn-task" id="tBtn1" onclick="handleTaskClick('tBtn1', 'https://twitter.com/Example1')">1. Follow Twitter Account @Example1</button>
+                        <button class="btn-task" id="tBtn2" onclick="handleTaskClick('tBtn2', 'https://twitter.com/Example2')">2. Follow Twitter Account @Example2</button>
+                        <button class="btn-task" id="tBtn5" onclick="handleTaskClick('tBtn5', 'https://twitter.com/intent/retweet')">3. Repost Whitelist Announcement Tweet</button>
+                        <button class="btn-task" id="tBtn3" onclick="handleTaskClick('tBtn3', 'https://twitter.com/intent/like')">4. Like & Quote Whitelist Tweet</button>
+                        <button class="btn-task" id="tBtn4" onclick="handleTaskClick('tBtn4', 'https://twitter.com/intent/tweet')">5. Post a Support Comment on Whitelist Tweet</button>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Submit Your Completed Post Link</label>
+                        <input type="text" id="txProofLink" class="form-input" placeholder="https://twitter.com/.../status/...">
+                    </div>
+
+                    <button class="btn-action" id="finalSubmitBtn" onclick="submitApplicationPipeline()">Submit Application & Enter Dashboard</button>
+                </div>
+            </div>
+
+            <div class="nft-card" style="margin-top: 20px;">
+                <h3 style="font-size: 16px; margin-bottom: 10px;">Preview Collection Artworks</h3>
+                <div class="slider-flex" id="previewSliderBox"></div>
+            </div>
+        </div>
+
+        <!-- ================================================== -->
+        <!-- VIRTUAL PAGE 3: COMMUNITY DASHBOARD                -->
+        <!-- ================================================== -->
+        <div id="supporterDashboardPage" class="page-section">
+            <div id="wlClosingCountdownCardDashboard" class="nft-card" style="background: #ff4d4d; color: #fff; display:none;">
+                <h3 style="text-transform: uppercase; font-size: 14px; text-align:center;">Whitelist Registration Closing In:</h3>
+                <div class="timer-container" style="max-width: 400px; margin: 10px auto 0 auto;">
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlDaysDash">00</span><span class="timer-label" style="color:#666;">Days</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlHoursDash">00</span><span class="timer-label" style="color:#666;">Hours</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlMinsDash">00</span><span class="timer-label" style="color:#666;">Mins</span></div>
+                    <div class="timer-unit" style="background:#fff; color:#000;"><span class="timer-num" id="wlSecsDash">00</span><span class="timer-label" style="color:#666;">Secs</span></div>
+                </div>
+            </div>
+
+            <div class="nft-card">
+                <div class="profile-bar">
+                    <img src="" class="profile-img bindAvatar" alt="User Profile">
+                    <div>
+                        <h2 style="margin:0;" class="bindTwitter">@username</h2>
+                        <p style="font-family: monospace; font-size: 12px; margin: 3px 0;" class="bindWallet">0x...</p>
+                        <span class="status-badge" id="supporterBadgeEl" style="background: #ff9f43;">FCFS ACCESS</span>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div style="display:flex; flex-direction:column; justify-content:space-between; height:100%;">
+                        <div>
+                            <h3>Mint Operations Panel</h3>
+                            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                                <button class="btn-action" style="font-size: 13px; padding: 10px;" onclick="alert('Mint contract is locked until countdown time opens.')">Mint Page</button>
+                                <button class="btn-action" style="background:#fff; color:#000; font-size: 13px; padding: 10px;" onclick="addCalendarReminder()">Add to Calendar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FIXED CLEAN GTD UPGRADE SYSTEM DIRECTIONS WITHOUT PROMOTIONAL REFERENCES -->
+                    <div style="border-top: 1.5px solid #000; padding-top: 15px; margin-top: 10px;" id="gtdUpgradeContainerForm">
+                        <h3 style="font-size: 16px;">Apply for GTD Whitelist Upgrade</h3>
+                        <p style="font-size: 12px; margin-bottom: 10px; color: #444; line-height: 1.4;">
+                            Instructions: Download any official project artwork asset below. Post it directly on your Twitter account tagging @Example1 as a support post. Once published, copy your live tweet link, paste it below and click submit.
+                        </p>
+                        
+                        <div class="slider-flex" style="margin-bottom: 12px;">
+                            <div class="download-asset-card">
+                                <img src="https://i.ibb.co.com/C5Lj8dGY/Postimage1.png" class="slider-thumb">
+                                <button class="btn-download-asset" onclick="directDownloadAsset('https://i.ibb.co.com/C5Lj8dGY/Postimage1.png', 'Asset1.png')">Download</button>
+                            </div>
+                            <div class="download-asset-card">
+                                <img src="https://i.ibb.co.com/bgtBJYjf/Postimage2.png" class="slider-thumb">
+                                <button class="btn-download-asset" onclick="directDownloadAsset('https://i.ibb.co.com/bgtBJYjf/Postimage2.png', 'Asset2.png')">Download</button>
+                            </div>
+                            <div class="download-asset-card">
+                                <img src="https://i.ibb.co.com/HphqvkxQ/Postimage3.png" class="slider-thumb">
+                                <button class="btn-download-asset" onclick="directDownloadAsset('https://i.ibb.co.com/HphqvkxQ/Postimage3.png', 'Asset3.png')">Download</button>
+                            </div>
+                        </div>
+
+                        <!-- FORMS WILL LOCK PERMANENTLY ON SUBMIT AND RENDER PENDING STATUS ONLY -->
+                        <div id="gtdFormActionsBlock">
+                            <div class="form-group">
+                                <input type="text" id="txGtdProof" class="form-input" placeholder="Paste your supportive Tweet URL link">
+                            </div>
+                            <button class="btn-action" style="padding: 10px; font-size:13px;" id="btnGtdUpgrade" onclick="submitGtdUpgradeRequest()">Submit Upgrade Request</button>
+                        </div>
+                        
+                        <div id="gtdPendingStatusMessageBlock" class="pending-container" style="display: none; margin-top: 10px;">
+                            Status: Pending Review — Your application has been logged. Please wait until verification is updated.
+                        </div>
+
+                        <p style="font-size: 12px; margin-top: 8px; font-weight: 700;">Review Status: <span id="lblGtdReviewStatus" style="color: blue;">NOT SUBMITTED</span></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ROADMAP ADAPTED DIRECTLY INSIDE PAGE 3 AS WELL FOR EXTENDED COMMUNITY SUPPORT -->
+            <div class="nft-card">
+                <h2 style="margin-bottom: 15px; font-size: 20px;">KYZEN Roadmap</h2>
+                <div class="grid-2">
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 1: Community Growth</h4>
+                        <p style="font-size: 12px; margin: 0;">Launch whitelist registration, open Discord private access, and start campaign.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 2: Mint Launch</h4>
+                        <p style="font-size: 12px; margin: 0;">Activate official mint contract, list on secondary market, and verify asset holders.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 3: Utility Staking</h4>
+                        <p style="font-size: 12px; margin: 0;">Deploy $KYZEN token staking system, holder multiplier rewards, and Polymarket Copy Trade Bot access.</p>
+                    </div>
+                    <div style="background: rgba(255,255,255,0.4); padding: 15px; border: 1.5px solid var(--black); border-radius: 8px;">
+                        <h4 style="font-size: 14px; margin-bottom: 4px;">Phase 4: Ecosystem Scale</h4>
+                        <p style="font-size: 12px; margin: 0;">Partner integration, new dynamic utility upgrades, and future legal token governance expansions.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sharedDashboardRenderZone1"></div>
+        </div>
+
+        <!-- ================================================== -->
+        <!-- VIRTUAL PAGE 4: COLLAB PARTNER DASHBOARD           -->
+        <!-- ================================================== -->
+        <div id="collabDashboardPage" class="page-section">
+            <div class="nft-card">
+                <div class="profile-bar">
+                    <img src="" class="profile-img bindAvatar" alt="User Profile">
+                    <div>
+                        <h2 style="margin:0;" class="bindTwitter">@username</h2>
+                        <p style="font-family: monospace; font-size: 12px; margin: 3px 0;" class="bindWallet">0x...</p>
+                        <span class="status-badge" style="background: #5f27cd; color:#fff;">COLLAB PARTNER</span>
+                    </div>
+                </div>
+
+                <div class="nft-card" style="box-shadow: none; border-style: dashed; background: rgba(255,255,255,0.2); padding: 15px;">
+                    <h3 style="font-size: 16px; margin-bottom: 5px;">Collab Spots Allocation Intake</h3>
+                    <p style="font-size: 12px; margin-bottom: 12px; color: #444;">Tell us how many spots your community requires and how you plan to introduce our project.</p>
+                    
+                    <div class="form-group">
+                        <textarea id="txCollabMessage" class="form-input" rows="3" placeholder="Enter community details and total required whitelist allocations..."></textarea>
+                    </div>
+                    <button class="btn-action" style="padding: 10px; font-size: 13px;" id="btnCollabSubmit" onclick="submitCollabFormPayload()">Submit Request Details</button>
+                    <p style="font-size: 12px; margin-top: 8px; font-weight: 700;">Manager Allocation Status: <span id="lblCollabReviewStatus" style="color: blue;">PENDING REVIEW</span></p>
+                    
+                    <button class="btn-action" style="background:#fff; color:#000; margin-top: 15px; font-size: 12px; padding: 8px;" onclick="window.open('https://twitter.com/example3')">Contact Collab Manager @example3</button>
+                </div>
+            </div>
+
+            <div class="sharedDashboardRenderZone2"></div>
+        </div>
+
+        <!-- ================================================== -->
+        <!-- VIRTUAL PAGE 5: DEVELOPER DASHBOARD                -->
+        <!-- ================================================== -->
+        <div id="devDashboardPage" class="page-section">
+            <div class="nft-card">
+                <div class="profile-bar">
+                    <img src="" class="profile-img bindAvatar" alt="User Profile">
+                    <div>
+                        <h2 style="margin:0;" class="bindTwitter">@username</h2>
+                        <p style="font-family: monospace; font-size: 12px; margin: 3px 0;" class="bindWallet">0x...</p>
+                        <span class="status-badge" style="background: #00d2d3; color:#000;">CORE DEVELOPER</span>
+                    </div>
+                </div>
+
+                <div class="nft-card" style="box-shadow: none; border-style: dashed; background: rgba(255,255,255,0.2); padding: 15px;">
+                    <h3 style="font-size: 16px; margin-bottom: 5px;">Ecosystem Integration Proposal</h3>
+                    <p style="font-size: 12px; margin-bottom: 12px; color: #444;">What tool, platform extension or integration would you like to build for the network?</p>
+                    
+                    <div class="form-group">
+                        <textarea id="txDevMessage" class="form-input" rows="3" placeholder="Describe your technical build tool proposal or dashboard feature..."></textarea>
+                    </div>
+                    <button class="btn-action" style="padding: 10px; font-size: 13px;" id="btnDevSubmit" onclick="submitDevFormPayload()">Submit Technical Proposal</button>
+                    <p style="font-size: 12px; margin-top: 8px; font-weight: 700;">System Review Status: <span id="lblDevReviewStatus" style="color: blue;">PENDING SYSTEM REVIEW</span></p>
+                    
+                    <button class="btn-action" style="background:#fff; color:#000; margin-top: 15px; font-size: 12px; padding: 8px;" onclick="window.open('https://twitter.com/example4')">Contact Dev Manager @example4</button>
+                </div>
+            </div>
+
+            <div class="sharedDashboardRenderZone3"></div>
+        </div>
+
+    </div>
+
+    <!-- Reusable Template Sources Data -->
+    <div id="sharedDashboardHtmlSource" style="display: none;">
+        <!-- MINT TIMELINE INJECTED DIRECTLY ABOVE GALLERY AS REQUESTED -->
+        <div class="nft-card">
+            <h2 style="margin-bottom: 10px; font-size: 18px;">Mint Schedule Timeline</h2>
+            <div class="data-table-wrapper">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Phase</th>
+                            <th>Time (UTC)</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>GTD FREE MINT</td><td>14:00 UTC</td><td>FREE</td></tr>
+                        <tr><td>FCFS Mint Window</td><td>14:30 UTC</td><td>0.0025 ETH</td></tr>
+                        <tr><td>Public Open Mint</td><td>15:00 UTC</td><td>0.0025 ETH</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="nft-card">
+            <h2 style="font-size: 18px; margin-bottom: 10px;">KYZEN Collection Gallery</h2>
+            <p style="font-size: 12px; color: #444;">Click on any avatar item below to examine its unique hand-drawn design traits configuration.</p>
+            <div class="gallery-wrap targetAssetGalleryInjections"></div>
+            
+            <!-- MINT LAUNCH TIMERS DOWNGRADED SEAMLESSLY BENEATH THE ART GALLERY -->
+            <div style="margin-top: 25px; border-top: 1.5px solid var(--black); padding-top: 15px;" class="dynamicMintTimerContainerBoxClass">
+                <h3 style="font-size: 14px; text-transform: uppercase; margin-bottom: 5px;">Mint Launch Countdown:</h3>
+                <div class="timer-container">
+                    <div class="timer-unit"><span class="timer-num bindDaysInline">00</span><span class="timer-label">Days</span></div>
+                    <div class="timer-unit"><span class="timer-num bindHoursInline">00</span><span class="timer-label">Hours</span></div>
+                    <div class="timer-unit"><span class="timer-num bindMinsInline">00</span><span class="timer-label">Mins</span></div>
+                    <div class="timer-unit"><span class="timer-num bindSecsInline">00</span><span class="timer-label">Secs</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NEWLY CONFIGURED UTILITY HIGHLIGHTS REPLACING METRICS CARD FOR EXTRA PREMIUM BRAND AESTHETICS -->
+        <div class="nft-card" style="background: linear-gradient(135deg, rgba(255,255,255,0.9), rgba(253,206,43,0.2)); border: 1.5px solid var(--black);">
+            <h2 style="font-size: 18px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">Future Ecosystem Vision</h2>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="background:#fff; padding:12px; border:1.5px solid var(--black); border-radius:6px; box-shadow:2px 2px 0px var(--black);">
+                    <h4 style="font-size:14px; color:#10ac84;">Community Vision</h4>
+                    <p style="font-size:12px; margin-top:3px; color:#333;">KYZEN is focused on building a strong and active community where early supporters are recognized and rewarded. The project aims to grow alongside its holders while creating a clean and utility-driven Ethereum NFT ecosystem.</p>
+                </div>
+                <div style="background:#fff; padding:12px; border:1.5px solid var(--black); border-radius:6px; box-shadow:2px 2px 0px var(--black);">
+                    <h4 style="font-size:14px; color:#5f27cd;">Holder Benefits</h4>
+                    <p style="font-size:12px; margin-top:3px; color:#333;">KYZEN holders are planned to receive future ecosystem advantages based on their support and participation inside the community.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal View Traits -->
+    <div class="modal-overlay" id="traitDetailsModalBox">
+        <div class="modal-content">
+            <span class="modal-close" onclick="dismissModalWindow()">&times;</span>
+            <div style="text-align: center; margin-top: 10px;">
+                <img src="" id="mdImgFrame" style="width: 50%; max-width: 160px; border: 1.5px solid var(--black); border-radius: 8px; box-shadow: 3px 3px 0px var(--black);">
+                <h3 id="mdTitleLabel" style="margin-top: 10px; font-size: 18px; text-transform: uppercase;">KYZEN #00</h3>
+                <div class="trait-grid" id="mdTraitsGridBox"></div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        KYZEN © 2026 — ALL RIGHTS RESERVED.
+    </footer>
+
+    <script>
+        // REPLACE WITH YOUR ACTUAL DEPLOYED GOOGLE APPS SCRIPT WEB APP URL BINDINGS
+        const GOOGLE_SHEET_ENDPOINTS = {
+            mainDatabase: "https://script.google.com/macros/s/AKfycbxSQ0NlLfpIr5-GhdcnywLZefXaopfJHXUEw0SjHDR5cyxWN15__6cXwwyZtreCIOaM/exec",
+            gtdDatabase: "https://script.google.com/macros/s/AKfycbyJFNf54Hj-7WLwGXjUSDIVLKlEbicR5tgETCiU1CoyvpWxDuq-ZnVbNzseS3uoXOKt/exec",
+            collabDatabase: "https://script.google.com/macros/s/AKfycbzXe9O-ut2-2H7I6MzgWlT5-fDGpzWS-mvfJA9LDv8qMq3D9xz2Kyp51bG9-1vVmIXB3w/exec",
+            developerDatabase: "https://script.google.com/macros/s/AKfycbwgpIcOhwG_OtV2x6fuBy3bjWDXRT_KIkeWxdvWMyKU1rwZAU-6VwKz-Nme1lZjAba_oQ/exec"
+        };
+
+        const ASSET_REGISTRY_MAP = [
+            { id: 1, src: "https://i.ibb.co.com/6cqCCxRh/1.png", traits: { "Background": "Bright Coral", "Skin": "Golden", "Eyes": "Ice Blue", "Hair": "Messy Anime", "Outfit": "Oversized Fashion T-Shirt", "Accessory": "Small Piercing", "Expression": "Relaxed" } },
+            { id: 21, src: "https://i.ibb.co.com/s96vzzL8/21.png", traits: { "Background": "Bright Yellow", "Skin": "Peach", "Eyes": "White", "Hair": "Messy Anime", "Outfit": "High Collar Shirt", "Accessory": "Double Earrings", "Expression": "Confident" } },
+            { id: 22, src: "https://i.ibb.co.com/CsK1HMRM/22.png", traits: { "Background": "Bright Orange", "Skin": "Deep Brown", "Eyes": "Gold", "Hair": "Wolf Cut", "Outfit": "Archer Style", "Accessory": "Hair Clip", "Expression": "Confident" } },
+            { id: 27, src: "https://i.ibb.co.com/NdwJ3g07/27.png", traits: { "Background": "Bright Cyan", "Skin": "Ash White", "Eyes": "Ice Blue", "Hair": "Spiky Layered", "Outfit": "Oversized Fashion T-Shirt", "Accessory": "Fashion Ring", "Expression": "Serious" } },
+            { id: 3, src: "https://i.ibb.co.com/YBLC0yLp/3.png", traits: { "Background": "Bright Mint", "Skin": "Golden", "Eyes": "Orange", "Hair": "Messy Anime", "Outfit": "Urban Fashion Shirt", "Accessory": "Fashion Ring", "Expression": "Relaxed" } },
+            { id: 28, src: "https://i.ibb.co.com/dwYkVn58/28.png", traits: { "Background": "Bright Orange", "Skin": "Lavender", "Eyes": "Purple", "Hair": "Wolf Cut", "Outfit": "Oversized Fashion T-Shirt", "Accessory": "Nose Bandage", "Expression": "Relaxed" } },
+            { id: 19, src: "https://i.ibb.co.com/rKd5fHZV/19.png", traits: { "Background": "Bright Mint", "Skin": "Olive", "Eyes": "Silver", "Hair": "Sharp Fringe", "Outfit": "Casual Tee", "Accessory": "Small Earrings", "Expression": "Relaxed" } },
+            { id: 9, src: "https://i.ibb.co.com/bMBh1BK7/9.png", traits: { "Background": "Bright Coral", "Skin": "Soft Cyan", "Eyes": "Lime", "Hair": "Messy Anime", "Outfit": "Minimal Poncho", "Accessory": "Neck Scarf", "Expression": "Confident" } },
+            { id: 16, src: "https://i.ibb.co.com/BW1PpR1/16.png", traits: { "Background": "Bright Aqua", "Skin": "Golden", "Eyes": "Ice Blue", "Hair": "Spiky Layered", "Outfit": "Layered Yukata", "Accessory": "Neck Scarf", "Expression": "Calm" } },
+            { id: 17, src: "https://i.ibb.co.com/Q3pXG2z4/17.png", traits: { "Background": "Bright Coral", "Skin": "Peach", "Eyes": "Gold", "Hair": "Sharp Fringe", "Outfit": "High Collar Shirt", "Accessory": "Small Earrings", "Expression": "Confident" } },
+            { id: 10, src: "https://i.ibb.co.com/ZzdnH4ks/10.png", traits: { "Background": "Bright Cyan", "Skin": "Deep Brown", "Eyes": "Amber", "Hair": "Short Wavy", "Outfit": "Oversized Fashion T-Shirt", "Accessory": "Ear Cuff", "Expression": "Calm" } },
+            { id: 7, src: "https://i.ibb.co.com/Y7JSsBP3/7.png", traits: { "Background": "Bright Cyan", "Skin": "Warm Tan", "Eyes": "Emerald", "Hair": "Split Bangs", "Outfit": "Oversized Fashion T-Shirt", "Accessory": "Ear Cuff", "Expression": "Soft Smile" } }
+        ];
+
+        let verificationCaptchaCode = "";
+        let completedTaskMap = { tBtn1: false, tBtn2: false, tBtn3: false, tBtn4: false, tBtn5: false };
+        let activeUserSession = null;
+        let realtimeSyncPoller = null;
+
+        window.addEventListener('DOMContentLoaded', () => {
+            generateCaptchaVerificationString();
+            renderIntegratedGalleryLayouts();
+            startEcosystemCountdownTimer();
+            startWlClosingTimerLoop();
+            restorePersistentStorageSession();
+            
+            setTimeout(() => {
+                const overlay = document.getElementById('loadingOverlay');
+                overlay.style.opacity = '0';
+                setTimeout(() => overlay.style.display = 'none', 400);
+            }, 600);
+        });
+
+        function switchViewPage(targetPageId) {
+            document.querySelectorAll('.page-section').forEach(view => {
+                view.classList.remove('active');
+            });
+            const viewTarget = document.getElementById(targetPageId);
+            if(viewTarget) viewTarget.classList.add('active');
+            window.scrollTo(0,0);
+        }
+
+        function restorePersistentStorageSession() {
+            const cachedSession = localStorage.getItem('kyzen_user_session_v3');
+            const hasAgreed = localStorage.getItem('kyzen_agree_flag_v3');
+            
+            if (cachedSession) {
+                activeUserSession = JSON.parse(cachedSession);
+                populateDashboardUiBindings();
+                openCorrectRoleDashboard(activeUserSession.role);
+                startDatabasePollingSync();
+            } else if (hasAgreed === 'true') {
+                switchViewPage('authPage');
+            } else {
+                switchViewPage('welcomePage');
+            }
+        }
+
+        function goToAuthPage() {
+            localStorage.setItem('kyzen_agree_flag_v3', 'true');
+            switchViewPage('authPage');
+        }
+
+        function generateCaptchaVerificationString() {
+            verificationCaptchaCode = Math.floor(1000 + Math.random() * 9000).toString();
+            document.getElementById('captchaValueBox').innerText = verificationCaptchaCode;
+        }
+
+        function processIdentityVerification() {
+            const twitter = document.getElementById('txTwitter').value.trim();
+            const wallet = document.getElementById('txWallet').value.trim();
+            const captcha = document.getElementById('txCaptcha').value.trim();
+            const errBox = document.getElementById('authErrorDisplay');
+
+            errBox.style.display = "none";
+
+            if (!twitter || !wallet || !captcha) {
+                displayAuthAlert("All standard registration fields must be provided.");
+                return;
+            }
+            if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) {
+                displayAuthAlert("Invalid Ethereum wallet address formatting structure.");
+                return;
+            }
+            if (captcha !== verificationCaptchaCode) {
+                displayAuthAlert("Verification code mismatch. Please retry code.");
+                generateCaptchaVerificationString();
+                return;
+            }
+
+            // RECONFIGURED LOGIC: TASKS PANEL DISPLAYED INLINE SOLELY AFTER FORM SUBMISSION PASSES
+            const panel = document.getElementById('taskPanelSection');
+            panel.style.display = "block";
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function displayAuthAlert(msg) {
+            const errBox = document.getElementById('authErrorDisplay');
+            errBox.innerText = msg;
+            errBox.style.display = "block";
+        }
+
+        function handleTaskClick(btnId, targetUrl) {
+            window.open(targetUrl, '_blank');
+            completedTaskMap[btnId] = true;
+            const targetButton = document.getElementById(btnId);
+            targetButton.classList.add('completed');
+            targetButton.innerText = "Task Registered ✓";
+        }
+
+        function submitApplicationPipeline() {
+            if (!completedTaskMap.tBtn1 || !completedTaskMap.tBtn2 || !completedTaskMap.tBtn3 || !completedTaskMap.tBtn4 || !completedTaskMap.tBtn5) {
+                alert("Please click and complete all 5 required Twitter tasks.");
+                return;
+            }
+
+            const proofUrl = document.getElementById('txProofLink').value.trim();
+            if(!proofUrl) {
+                alert("Please submit your completed Twitter post link for verification.");
+                return;
+            }
+
+            document.getElementById('finalSubmitBtn').disabled = true;
+            document.getElementById('finalSubmitBtn').innerText = "Processing submission...";
+
+            const chosenAsset = ASSET_REGISTRY_MAP[Math.floor(Math.random() * ASSET_REGISTRY_MAP.length)];
+
+            activeUserSession = {
+                twitter: document.getElementById('txTwitter').value.trim(),
+                wallet: document.getElementById('txWallet').value.trim(),
+                role: document.getElementById('slRole').value,
+                proof: proofUrl,
+                avatar: chosenAsset.src,
+                gtdStatus: "FCFS ACCESS",
+                collabStatus: "PENDING REVIEW",
+                developerStatus: "PENDING SYSTEM REVIEW"
+            };
+
+            localStorage.setItem('kyzen_user_session_v3', JSON.stringify(activeUserSession));
+
+            dispatchServerRequest(GOOGLE_SHEET_ENDPOINTS.mainDatabase, {
+                action: "registerUser",
+                twitter: activeUserSession.twitter,
+                wallet: activeUserSession.wallet,
+                role: activeUserSession.role,
+                proofUrl: activeUserSession.proof
+            });
+
+            populateDashboardUiBindings();
+            openCorrectRoleDashboard(activeUserSession.role);
+            startDatabasePollingSync();
+        }
+
+        function openCorrectRoleDashboard(role) {
+            if (role === "Community Supporter") switchViewPage('supporterDashboardPage');
+            if (role === "Collab") switchViewPage('collabDashboardPage');
+            if (role === "Developer") switchViewPage('devDashboardPage');
+        }
+
+        function populateDashboardUiBindings() {
+            document.querySelectorAll('.bindTwitter').forEach(el => el.innerText = activeUserSession.twitter);
+            document.querySelectorAll('.bindWallet').forEach(el => el.innerText = activeUserSession.wallet);
+            document.querySelectorAll('.bindAvatar').forEach(el => el.src = activeUserSession.avatar);
+
+            document.getElementById('lblGtdReviewStatus').innerText = activeUserSession.gtdStatus;
+            document.getElementById('lblCollabReviewStatus').innerText = activeUserSession.collabStatus;
+            document.getElementById('lblDevReviewStatus').innerText = activeUserSession.developerStatus;
+
+            // ABSOLUTE ACTION LOCK FOR SECURE GTD STATUS TRACKING PIPELINES
+            if (activeUserSession.gtdStatus === "Pending Review" || activeUserSession.gtdStatus === "PENDING") {
+                document.getElementById('gtdFormActionsBlock').style.display = "none";
+                document.getElementById('gtdPendingStatusMessageBlock').style.display = "block";
+            } else if (activeUserSession.gtdStatus === "APPROVED" || activeUserSession.gtdStatus === "GTD ACCESS") {
+                document.getElementById('gtdFormActionsBlock').style.display = "none";
+                document.getElementById('gtdPendingStatusMessageBlock').style.display = "none";
+                const badge = document.getElementById('supporterBadgeEl');
+                if(badge) {
+                    badge.style.background = "#10ac84";
+                    badge.style.color = "#fff";
+                    badge.innerText = "GTD ACCESS APPROVED";
+                }
+            } else {
+                document.getElementById('gtdFormActionsBlock').style.display = "block";
+                document.getElementById('gtdPendingStatusMessageBlock').style.display = "none";
+            }
+        }
+
+        function submitGtdUpgradeRequest() {
+            const proofLink = document.getElementById('txGtdProof').value.trim();
+            if(!proofLink) {
+                alert("Please insert a live Tweet link verification reference.");
+                return;
+            }
+            
+            activeUserSession.gtdStatus = "Pending Review";
+            localStorage.setItem('kyzen_user_session_v3', JSON.stringify(activeUserSession));
+            populateDashboardUiBindings();
+
+            dispatchServerRequest(GOOGLE_SHEET_ENDPOINTS.gtdDatabase, {
+                action: "applyGTD",
+                twitter: activeUserSession.twitter,
+                wallet: activeUserSession.wallet,
+                gtdProofUrl: proofLink
+            });
+        }
+
+        function submitCollabFormPayload() {
+            const detailsText = document.getElementById('txCollabMessage').value.trim();
+            if(!detailsText) {
+                alert("Please include context fields data before posting.");
+                return;
+            }
+            document.getElementById('btnCollabSubmit').disabled = true;
+            activeUserSession.collabStatus = "SUBMITTED — PENDING";
+            document.getElementById('lblCollabReviewStatus').innerText = "SUBMITTED — PENDING";
+            localStorage.setItem('kyzen_user_session_v3', JSON.stringify(activeUserSession));
+
+            dispatchServerRequest(GOOGLE_SHEET_ENDPOINTS.collabDatabase, {
+                action: "submitCollab",
+                twitter: activeUserSession.twitter,
+                wallet: activeUserSession.wallet,
+                collabDetails: detailsText
+            });
+        }
+
+        function submitDevFormPayload() {
+            const proposalText = document.getElementById('txDevMessage').value.trim();
+            if(!proposalText) {
+                alert("Proposal fields description text cannot be blank.");
+                return;
+            }
+            document.getElementById('btnDevSubmit').disabled = true;
+            activeUserSession.developerStatus = "SUBMITTED — PENDING";
+            document.getElementById('lblDevReviewStatus').innerText = "SUBMITTED — PENDING";
+            localStorage.setItem('kyzen_user_session_v3', JSON.stringify(activeUserSession));
+
+            dispatchServerRequest(GOOGLE_SHEET_ENDPOINTS.developerDatabase, {
+                action: "submitDev",
+                twitter: activeUserSession.twitter,
+                wallet: activeUserSession.wallet,
+                devDetails: proposalText
+            });
+        }
+
+        function dispatchServerRequest(targetUrl, dataPayload) {
+            if(!targetUrl || targetUrl.includes("YOUR_SCRIPT")) {
+                console.log("Mock Sync Log:", dataPayload);
+                return;
+            }
+            const formParams = new URLSearchParams(dataPayload);
+            fetch(targetUrl, {
+                method: "POST",
+                mode: "no-cors",
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: formParams
+            }).catch(e => console.log("Sync sequence processed"));
+        }
+
+        function startDatabasePollingSync() {
+            if(realtimeSyncPoller) clearInterval(realtimeSyncPoller);
+
+            realtimeSyncPoller = setInterval(() => {
+                if(!activeUserSession) return;
+
+                if (activeUserSession.role === "Community Supporter" && !GOOGLE_SHEET_ENDPOINTS.gtdDatabase.includes("YOUR_SCRIPT")) {
+                    fetch(`${GOOGLE_SHEET_ENDPOINTS.gtdDatabase}?wallet=${encodeURIComponent(activeUserSession.wallet)}&action=queryStatus`)
+                    .then(res => res.json()).then(resp => {
+                        if(resp && resp.status && resp.status !== activeUserSession.gtdStatus) {
+                            activeUserSession.gtdStatus = (resp.status === "GTD") ? "GTD ACCESS" : resp.status;
+                            localStorage.setItem('kyzen_user_session_v3', JSON.stringify(activeUserSession));
+                            populateDashboardUiBindings();
+                        }
+                    }).catch(e => console.log("Poll network log pass"));
+                }
+            }, 30000); 
+        }
+
+        function renderIntegratedGalleryLayouts() {
+            const rawTemplate = document.getElementById('sharedDashboardHtmlSource').innerHTML;
+            document.querySelector('.sharedDashboardRenderZone1').innerHTML = rawTemplate;
+            document.querySelector('.sharedDashboardRenderZone2').innerHTML = rawTemplate;
+            document.querySelector('.sharedDashboardRenderZone3').innerHTML = rawTemplate;
+
+            const slider = document.getElementById('previewSliderBox');
+            ASSET_REGISTRY_MAP.forEach(item => {
+                const img = document.createElement('img');
+                img.src = item.src;
+                img.className = 'slider-thumb';
+                img.onclick = () => launchModalView(item.id);
+                slider.appendChild(img);
+            });
+
+            document.querySelectorAll('.targetAssetGalleryInjections').forEach(wrap => {
+                ASSET_REGISTRY_MAP.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = "gallery-item";
+                    card.onclick = () => launchModalView(item.id);
+                    card.innerHTML = `<img src="${item.src}"><div class="gallery-title">KYZEN #${item.id}</div>`;
+                    wrap.appendChild(card);
+                });
+            });
+        }
+
+        function launchModalView(id) {
+            const item = ASSET_REGISTRY_MAP.find(a => a.id === id);
+            if(!item) return;
+
+            document.getElementById('mdImgFrame').src = item.src;
+            document.getElementById('mdTitleLabel').innerText = `KYZEN #${item.id}`;
+            
+            const grid = document.getElementById('mdTraitsGridBox');
+            grid.innerHTML = "";
+
+            for (const [key, val] of Object.entries(item.traits)) {
+                const box = document.createElement('div');
+                box.className = "trait-box";
+                box.innerHTML = `<div class="trait-lbl">${key}</div><div class="trait-val">${val}</div>`;
+                grid.appendChild(box);
+            }
+            document.getElementById('traitDetailsModalBox').style.display = "flex";
+        }
+
+        function dismissModalWindow() {
+            document.getElementById('traitDetailsModalBox').style.display = "none";
+        }
+
+        function startEcosystemCountdownTimer() {
+            const targetDateEpoch = new Date('May 22, 2026 14:00:00 UTC').getTime();
+
+            function refreshClock() {
+                const now = new Date().getTime();
+                const delta = targetDateEpoch - now;
+
+                if (delta < 0) return;
+
+                const days = Math.floor(delta / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                const hours = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const mins = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                const secs = Math.floor((delta % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+                document.querySelectorAll('.bindDaysInline').forEach(el => el.innerText = days);
+                document.querySelectorAll('.bindHoursInline').forEach(el => el.innerText = hours);
+                document.querySelectorAll('.bindMinsInline').forEach(el => el.innerText = mins);
+                document.querySelectorAll('.bindSecsInline').forEach(el => el.innerText = secs);
+            }
+            refreshClock();
+            setInterval(refreshClock, 1000);
+        }
+
+        function startWlClosingTimerLoop() {
+            const closingTargetEpoch = new Date('May 20, 2026 23:00:00 UTC').getTime();
+            
+            const card1 = document.getElementById('wlClosingCountdownCardTop');
+            const card2 = document.getElementById('wlClosingCountdownCardDashboard');
+            
+            card1.style.display = "block";
+            card2.style.display = "block";
+
+            function runLoop() {
+                const now = new Date().getTime();
+                const delta = closingTargetEpoch - now;
+
+                if (delta <= 0) {
+                    clearInterval(wlLoopInterval);
+                    
+                    // ON EXSPIRATION DETECTED: UPDATE TEXT OUTPUT AND PURGE ACCESS TO PAGES 1 & 2 IMMEDIATELY
+                    const msgHtml = `<h3 style="text-align:center; padding:10px; font-size:14px; text-transform:uppercase; letter-spacing:0.5px;">All wallet addresses will be updated to OpenSea at 13:00 UTC</h3>`;
+                    card1.innerHTML = msgHtml;
+                    card2.innerHTML = msgHtml;
+                    
+                    document.getElementById('welcomePage').style.display = "none";
+                    document.getElementById('authPage').style.display = "none";
+                    
+                    if(!activeUserSession) {
+                        switchViewPage('supporterDashboardPage');
+                    }
+                    return;
+                }
+
+                const d = Math.floor(delta / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
+                const h = Math.floor((delta % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
+                const m = Math.floor((delta % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                const s = Math.floor((delta % (1000 * 60)) / 1000).toString().padStart(2, '0');
+
+                document.getElementById('wlDays').innerText = d;
+                document.getElementById('wlHours').innerText = h;
+                document.getElementById('wlMins').innerText = m;
+                document.getElementById('wlSecs').innerText = s;
+
+                document.getElementById('wlDaysDash').innerText = d;
+                document.getElementById('wlHoursDash').innerText = h;
+                document.getElementById('wlMinsDash').innerText = m;
+                document.getElementById('wlSecsDash').innerText = s;
+            }
+
+            runLoop();
+            const wlLoopInterval = setInterval(runLoop, 1000);
+        }
+
+        // BROWSER DIRECT TRIGGER ASSETS DOWNLOAD PIPELINE TO AVOID EXTERNAL VISITS
+        function directDownloadAsset(imgUrl, fileName) {
+            fetch(imgUrl)
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const anchor = document.createElement('a');
+                    anchor.style.display = 'none';
+                    anchor.href = blobUrl;
+                    anchor.download = fileName;
+                    document.body.appendChild(anchor);
+                    anchor.click();
+                    document.body.removeChild(anchor);
+                    window.URL.revokeObjectURL(blobUrl);
+                })
+                .catch(() => {
+                    // Fallback to open tab if fetch fails due to CORS or network errors
+                    window.open(imgUrl, '_blank');
+                });
+        }
+
+        function addCalendarReminder() {
+            window.open("https://calendar.google.com/calendar/render?action=TEMPLATE&text=KYZEN+NFT+WHITELIST+MINT&dates=20260522T140000Z/20260522T170000Z&details=Official+KYZEN+Launch+Sequence.", "_blank");
+        }
+    </script>
+</body>
+</html>
