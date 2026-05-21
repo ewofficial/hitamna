@@ -506,11 +506,27 @@
             }, 1000);
         }
 
+        // Web3 Connection Management (Multi-Wallet Extension Support Setup)
         async function connectWallet() {
-            if (window.ethereum) {
+            // Checks for any injected wallet provider extension available in the browser
+            let injectedProvider = window.ethereum;
+
+            // Multi-wallet routing detection check
+            if (window.ethereum && window.ethereum.providers) {
+                // If multiple extensions are installed (e.g. MetaMask, OKX, Phantom together), fallback safely
+                injectedProvider = window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum.providers[0];
+            } else if (!injectedProvider && window.phantom && window.phantom.ethereum) {
+                // Route to Phantom extension if standalone
+                injectedProvider = window.phantom.ethereum;
+            } else if (!injectedProvider && window.okxwallet) {
+                // Route to OKX Wallet extension if standalone
+                injectedProvider = window.okxwallet;
+            }
+
+            if (injectedProvider) {
                 try {
-                    provider = new ethers.BrowserProvider(window.ethereum);
-                    await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    provider = new ethers.BrowserProvider(injectedProvider);
+                    await injectedProvider.request({ method: 'eth_requestAccounts' });
                     const signer = await provider.getSigner();
                     userAddress = await signer.getAddress();
 
@@ -522,7 +538,7 @@
                     alert("User rejected wallet linking request.");
                 }
             } else {
-                alert("Please open this page inside a Web3 browser or MetaMask application environment.");
+                alert("Please open this page inside a Web3 browser or use a wallet extension like MetaMask, OKX, Phantom, or Keplr.");
             }
         }
 
