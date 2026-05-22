@@ -598,15 +598,45 @@
 
         // Web3 Connection Management (Multi-Wallet Extension Support Setup)
         async function connectWallet() {
-            let injectedProvider = window.ethereum;
+            // Priority list of various injected EIP-1193 Web3 providers
+            let injectedProvider = null;
 
-            if (window.ethereum && window.ethereum.providers) {
-                injectedProvider = window.ethereum.providers.find(p => p.isMetaMask) || window.ethereum.providers[0];
-            } else if (!injectedProvider && window.phantom && window.phantom.ethereum) {
-                injectedProvider = window.phantom.ethereum;
-            } else if (!injectedProvider && window.okxwallet) {
+            if (window.ethereum) {
+                if (window.ethereum.providers && window.ethereum.providers.length > 0) {
+                    // Safe fallback routing to read whatever active extensions user interacts with first
+                    injectedProvider = window.ethereum.providers[0];
+                } else {
+                    injectedProvider = window.ethereum;
+                }
+            } else if (window.okxwallet) {
+                // Route directly to OKX Wallet extension
                 injectedProvider = window.okxwallet;
+            } else if (window.phantom && window.phantom.ethereum) {
+                // Route directly to Phantom extension
+                injectedProvider = window.phantom.ethereum;
+            } else if (window.keplr && window.keplr.ethereum) {
+                // Route to Keplr EVM layer fallback if activated
+                injectedProvider = window.keplr.ethereum;
             }
+
+            if (injectedProvider) {
+                try {
+                    provider = new ethers.BrowserProvider(injectedProvider);
+                    await injectedProvider.request({ method: 'eth_requestAccounts' });
+                    const signer = await provider.getSigner();
+                    userAddress = await signer.getAddress();
+
+                    document.getElementById('btnConnectWallet').innerText = userAddress.substring(0, 6) + "..." + userAddress.substring(38);
+                    
+                    readContractValues();
+                } catch (err) {
+                    console.error(err);
+                    alert("User rejected wallet linking request.");
+                }
+            } else {
+                alert("Please open this page inside a Web3 browser or use a wallet extension like MetaMask, OKX, Phantom, or Keplr.");
+            }
+        }
 
             if (injectedProvider) {
                 try {
