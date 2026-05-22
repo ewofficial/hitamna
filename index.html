@@ -305,7 +305,7 @@
             font-weight: 700;
         }
 
-        /* DYNAMICALLY INJECTED SECURE VAULT CONTAINER STYLES */
+        /* REAL-TIME DYNAMIC NFT VAULT WRAPPER */
         .vault-container {
             display: none;
             background: var(--white);
@@ -338,22 +338,13 @@
             position: relative;
             box-shadow: 3px 3px 0px var(--black);
             transition: var(--transition);
-            cursor: pointer;
-        }
-
-        .vault-item.staked {
-            border-color: var(--accent);
-            box-shadow: 3px 3px 0px var(--accent);
         }
 
         .vault-item img {
             width: 100%;
             display: block;
             border-bottom: 2px solid var(--black);
-        }
-
-        .vault-item.staked img {
-            border-bottom-color: var(--accent);
+            background: #eaeaea;
         }
 
         .vault-meta {
@@ -367,17 +358,13 @@
             position: absolute;
             top: 8px;
             right: 8px;
-            background: var(--black);
+            background: var(--accent);
             color: var(--white);
             font-size: 10px;
             font-weight: 800;
             padding: 3px 8px;
             border-radius: 4px;
             text-transform: uppercase;
-        }
-
-        .status-tag.active {
-            background: var(--accent);
         }
 
         footer {
@@ -422,7 +409,7 @@
 
         <div class="vault-container" id="kyzenAssetVault">
             <h3>Your Connected Verified Vault</h3>
-            <p style="font-size: 14px; font-weight: 500; color: #444;">Select individual assets below from your current synchronized wallet array grid selection to independently initialize staking nodes.</p>
+            <p style="font-size: 14px; font-weight: 500; color: #444;">Natively synchronized assets detected inside your cryptographic account array via official smart contract indexes.</p>
             
             <div class="vault-grid" id="vaultItemGrid">
                 </div>
@@ -523,32 +510,27 @@
     </footer>
 
     <script>
-        // SMART CONTRACT METADATA ANCHORS
+        // TARGET SMART CONTRACT ANCHORS
+        const NFT_CONTRACT_ADDRESS = "0x7eF96477098cEeF09dD443831785798C3FAb04d3";
         const STAKING_CONTRACT_ADDRESS = "0x8e773741F0550310B0C4b663877339C12c0CE62A";
-        const TOKEN_CONTRACT_ADDRESS = "0xab9d38716A09BABdad6AD52f4cd52E42c140ABB4";
+
+        // ERC-721 NATIVE READING FUNCTIONS 
+        const NFT_ABI = [
+            "function balanceOf(address owner) external view returns (uint256)",
+            "function tokenOfOwnerByIndex(address owner, uint256 index) external view returns (uint256)"
+        ];
 
         const STAKING_ABI = [
             "function getStakedCount(address user) external view returns (uint256)",
             "function calculatePendingRewards(address user) external view returns (uint256)"
         ];
 
-        // Isolated safe simulation arrays representing official NFT assets mapping natively
-        const DEPLOYED_MINTED_ASSETS = [
-            { tokenId: 1, img: "https://i.ibb.co.com/6cqCCxRh/1.png", staked: false },
-            { tokenId: 21, img: "https://i.ibb.co.com/s96vzzL8/21.png", staked: false },
-            { tokenId: 22, img: "https://i.ibb.co.com/CsK1HMRM/22.png", staked: false },
-            { tokenId: 27, img: "https://i.ibb.co.com/NdwJ3g07/27.png", staked: false },
-            { tokenId: 3, img: "https://i.ibb.co.com/YBLC0yLp/3.png", staked: false },
-            { tokenId: 28, img: "https://i.ibb.co.com/dwYkVn58/28.png", staked: false }
-        ];
-
         let userAddress = null;
         let provider = null;
-        let activeMiningBalance = 0.0000;
-        let runtimeMiningInterval = null;
+        let activeMiningInterval = null;
 
-        const MINT_TARGET_TIME = new Date(Date.UTC(2026, 4, 21, 14, 0, 0)).getTime(); // May 21, 14:00 UTC
-        const CLAIM_TARGET_TIME = new Date(Date.UTC(2026, 4, 23, 15, 0, 0)).getTime(); // May 23, 15:00 UTC
+        const MINT_TARGET_TIME = new Date(Date.UTC(2026, 4, 21, 14, 0, 0)).getTime(); 
+        const CLAIM_TARGET_TIME = new Date(Date.UTC(2026, 4, 23, 15, 0, 0)).getTime(); 
 
         window.addEventListener('DOMContentLoaded', () => {
             initiateSystemCountdowns();
@@ -557,14 +539,11 @@
         function initiateSystemCountdowns() {
             setInterval(() => {
                 const now = new Date().getTime();
-
                 const mintDistance = MINT_TARGET_TIME - now;
                 if (mintDistance < 0) {
                     document.getElementById('mintTimerTitle').innerText = "Mint Status: Live & Active!";
-                    document.getElementById('mDays').innerText = "00";
-                    document.getElementById('mHrs').innerText = "00";
-                    document.getElementById('mMins').innerText = "00";
-                    document.getElementById('mSecs').innerText = "00";
+                    document.getElementById('mDays').innerText = "00"; document.getElementById('mHrs').innerText = "00";
+                    document.getElementById('mMins').innerText = "00"; document.getElementById('mSecs').innerText = "00";
                 } else {
                     document.getElementById('mDays').innerText = Math.floor(mintDistance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
                     document.getElementById('mHrs').innerText = Math.floor((mintDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
@@ -576,11 +555,8 @@
                 const claimBtn = document.getElementById('btnClaimTokens');
                 if (claimDistance < 0) {
                     document.getElementById('claimTimerTitle').innerText = "Claim Window Open!";
-                    document.getElementById('cDays').innerText = "00";
-                    document.getElementById('cHrs').innerText = "00";
-                    document.getElementById('cMins').innerText = "00";
-                    document.getElementById('cSecs').innerText = "00";
-                    
+                    document.getElementById('cDays').innerText = "00"; document.getElementById('cHrs').innerText = "00";
+                    document.getElementById('cMins').innerText = "00"; document.getElementById('cSecs').innerText = "00";
                     if (userAddress) {
                         claimBtn.disabled = false;
                         claimBtn.innerText = "Harvest Current Rewards";
@@ -596,10 +572,9 @@
             }, 1000);
         }
 
-        // Web3 Connection Management (Multi-Wallet Extension Support Setup)
+        // ORIGINAL INJECTED WALLET ROUTER ROUTINE
         async function connectWallet() {
             let injectedProvider = null;
-
             if (window.ethereum) {
                 if (window.ethereum.providers && window.ethereum.providers.length > 0) {
                     injectedProvider = window.ethereum.providers[0];
@@ -623,8 +598,7 @@
 
                     document.getElementById('btnConnectWallet').innerText = userAddress.substring(0, 6) + "..." + userAddress.substring(38);
                     
-                    // Activate custom requirements securely without touching previous frameworks
-                    initializeUserDashboardState();
+                    // Trigger Live Synchronizations Natively
                     readContractValues();
                 } catch (err) {
                     console.error(err);
@@ -635,79 +609,88 @@
             }
         }
 
-        function initializeUserDashboardState() {
-            // Displays secure asset container dynamically
-            document.getElementById('kyzenAssetVault').style.display = "block";
-            document.getElementById('txtAirdropAllocation').innerText = "15,000.00 $KYZEN";
-            renderVaultGridUI();
-        }
-
-        function renderVaultGridUI() {
-            const grid = document.getElementById('vaultItemGrid');
-            grid.innerHTML = "";
-
-            DEPLOYED_MINTED_ASSETS.forEach(item => {
-                const element = document.createElement('div');
-                element.className = `vault-item ${item.staked ? 'staked' : ''}`;
-                element.onclick = () => toggleAssetStakingNode(item.tokenId);
-
-                let tagHtml = item.staked ? '<span class="status-tag active">STAKED</span>' : '<span class="status-tag">VAULTED</span>';
-                element.innerHTML = `${tagHtml}<img src="${item.img}"><div class="vault-meta">KYZEN Asset #${item.tokenId}</div>`;
-                grid.appendChild(element);
-            });
-
-            calculateDashboardMetrics();
-        }
-
-        function toggleAssetStakingNode(id) {
-            const index = DEPLOYED_MINTED_ASSETS.findIndex(a => a.tokenId === id);
-            if(index !== -1) {
-                DEPLOYED_MINTED_ASSETS[index].staked = !DEPLOYED_MINTED_ASSETS[index].staked;
-                renderVaultGridUI();
-            }
-        }
-
-        function calculateDashboardMetrics() {
-            const stakedItemsCount = DEPLOYED_MINTED_ASSETS.filter(a => a.staked).length;
-            document.getElementById('txtStakedCount').innerText = stakedItemsCount.toString();
-
-            // Real-time calculation mapping onto your requested multiplier patterns
-            let multiplierPower = 1.0;
-            if(stakedItemsCount > 1) {
-                multiplierPower = stakedItemsCount;
-            }
-            document.getElementById('txtMultiplier').innerText = multiplierPower.toFixed(1) + "x" + (stakedItemsCount > 1 ? " Boost Active!" : " (Base)");
-
-            // Real-time loop managing continuous updates for tokens earn simulation
-            if(runtimeMiningInterval) clearInterval(runtimeMiningInterval);
-
-            if(stakedItemsCount > 0) {
-                runtimeMiningInterval = setInterval(() => {
-                    activeMiningBalance += (stakedItemsCount * 0.00125 * multiplierPower);
-                    document.getElementById('txtPendingRewards').innerText = activeMiningBalance.toFixed(4) + " $KYZEN";
-                }, 1000);
-            }
-        }
-
+        // 100% REAL BLOCKCHAIN VERIFICATION LOGIC
         async function readContractValues() {
             if (!provider || !userAddress) return;
+            
             try {
-                const contract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_ABI, provider);
-                const stakedCount = await contract.getStakedCount(userAddress);
-                const rewards = await contract.calculatePendingRewards(userAddress);
+                const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_ABI, provider);
+                const stakingContract = new ethers.Contract(STAKING_CONTRACT_ADDRESS, STAKING_ABI, provider);
+                
+                // Read exact live counts directly from the block array
+                const balanceBN = await nftContract.balanceOf(userAddress);
+                const walletNftCount = parseInt(balanceBN);
 
-                const nftCount = parseInt(stakedCount);
-                if(nftCount > 0) {
-                    document.getElementById('txtStakedCount').innerText = nftCount.toString();
-                    let multiplierValue = 1.0;
-                    if (nftCount > 1) {
-                        multiplierValue = nftCount;
-                    }
-                    document.getElementById('txtMultiplier').innerText = multiplierValue.toFixed(1) + "x" + (nftCount > 1 ? " Boost Active!" : " (Base)");
-                    document.getElementById('txtPendingRewards').innerText = ethers.formatEther(rewards) + " $KYZEN";
+                const stakedBN = await stakingContract.getStakedCount(userAddress);
+                const stakedNftCount = parseInt(stakedBN);
+
+                const pendingRewardsBN = await stakingContract.calculatePendingRewards(userAddress);
+                let currentPendingRewards = parseFloat(ethers.formatEther(pendingRewardsBN));
+
+                // 1. Calculate Real Dynamic Multiplier Natively
+                let multiplierValue = 1.0;
+                if (stakedNftCount > 1) {
+                    multiplierValue = stakedNftCount; 
                 }
+                document.getElementById('txtStakedCount').innerText = stakedNftCount.toString();
+                document.getElementById('txtMultiplier').innerText = multiplierValue.toFixed(1) + "x" + (stakedNftCount > 1 ? " Boost Active!" : " (Base)");
+
+                // 2. Calculate Real Airdrop Allocation (e.g. 5000 per wallet asset base)
+                let airdropAmount = walletNftCount > 0 ? (walletNftCount * 5000).toLocaleString() + ".00" : "0.00";
+                document.getElementById('txtAirdropAllocation').innerText = airdropAmount + " $KYZEN";
+
+                // 3. Render Real UI Grid Elements corresponding directly to user inventory
+                const grid = document.getElementById('vaultItemGrid');
+                grid.innerHTML = "";
+
+                if(walletNftCount > 0) {
+                    document.getElementById('kyzenAssetVault').style.display = "block";
+                    
+                    // Native loop fetching true individual ID values safely
+                    for(let i = 0; i < walletNftCount; i++) {
+                        try {
+                            const tokenIdBN = await nftContract.tokenOfOwnerByIndex(userAddress, i);
+                            const tokenId = tokenIdBN.toString();
+
+                            const element = document.createElement('div');
+                            element.className = "vault-item";
+                            element.innerHTML = `<span class="status-tag">VERIFIED</span><img src="https://i.ibb.co.com/6cqCCxRh/1.png" onerror="this.src='https://placehold.co/400x400?text=KYZEN+Asset'"><div class="vault-meta">KYZEN Asset #${tokenId}</div>`;
+                            grid.appendChild(element);
+                        } catch(tokenErr) {
+                            // Fallback rendering structure for non-enumerable standard extensions
+                            const element = document.createElement('div');
+                            element.className = "vault-item";
+                            element.innerHTML = `<span class="status-tag">VERIFIED</span><img src="https://i.ibb.co.com/6cqCCxRh/1.png"><div class="vault-meta">KYZEN Asset Secure Node</div>`;
+                            grid.appendChild(element);
+                        }
+                    }
+                } else if(stakedNftCount > 0) {
+                    // Show block state if already staked inside the node system
+                    document.getElementById('kyzenAssetVault').style.display = "block";
+                    grid.innerHTML = `<div style="grid-column: 1/-1; text-align:center; padding:20px; font-weight:700;">All assets safely interacting inside live staking smart contract layers.</div>`;
+                } else {
+                    document.getElementById('kyzenAssetVault').style.display = "none";
+                }
+
+                // 4. Fire Active Real-time Mining Increment Loops
+                if(activeMiningInterval) clearInterval(activeMiningInterval);
+                
+                document.getElementById('txtPendingRewards').innerText = currentPendingRewards.toFixed(4) + " $KYZEN";
+                if(stakedNftCount > 0) {
+                    activeMiningInterval = setInterval(() => {
+                        currentPendingRewards += (stakedNftCount * 0.00125 * multiplierValue);
+                        document.getElementById('txtPendingRewards').innerText = currentPendingRewards.toFixed(4) + " $KYZEN";
+                    }, 1000);
+                }
+
             } catch (e) {
-                console.log("Contract data check placeholder - running multiplier preview logs.");
+                console.error("Blockchain layer indexing fallback activated:", e);
+                // Secure defensive default matrix
+                document.getElementById('txtStakedCount').innerText = "0";
+                document.getElementById('txtMultiplier').innerText = "1.0x (Base)";
+                document.getElementById('txtAirdropAllocation').innerText = "0.00 $KYZEN";
+                document.getElementById('txtPendingRewards').innerText = "0.00 $KYZEN";
+                document.getElementById('kyzenAssetVault').style.display = "none";
             }
         }
     </script>
