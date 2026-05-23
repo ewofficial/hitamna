@@ -551,7 +551,7 @@
                 const mockNftCount = (parseInt(userAddress.substring(2, 6), 16) % 3) + 2; 
                 
                 // Calculates a proportional dynamic reward structure for maximum layout compliance
-                const mockRewards = (mockNftCount * 250) + 0.50; 
+                const mockRewards = (mockNftCount * 5000) + 0.50; 
 
                 document.getElementById('txtStakedCount').innerText = mockNftCount.toString();
                 document.getElementById('txtMultiplier').innerText = mockNftCount.toFixed(1) + "x Boost Active!";
